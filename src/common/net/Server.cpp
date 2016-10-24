@@ -4,12 +4,11 @@
  *  Created on: Oct 17, 2016
  *      Author: yoko
  */
-
+#include "Server.h"
+#include "Session.h"
 #include <memory>
 #include <utility>
 
-#include "Server.h"
-#include "Session.h"
 namespace Net {
 
 CServer::CServer(boost::asio::io_service& IO_Service, unsigned short const Port):

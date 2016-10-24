@@ -1,5 +1,7 @@
+/*! \file */
+
 /*
- * Adapter.h
+ * Server.h
  *
  *  Created on: Oct 17, 2016
  *      Author: yoko
@@ -8,15 +10,25 @@
 #ifndef SRC_NET_SERVER_H_
 #define SRC_NET_SERVER_H_
 #include <boost/asio.hpp>
+#include "common/net/IConnectable.h"
+
 using boost::asio::ip::tcp;
 namespace Net {
 
-// Server listening for incoming connections of external clients
-// Need atleast 1 server running on each client to re
-class CServer {
+/*! \brief Server like entity which listens for incoming connections.
+ *
+ *	An object of type CServer will listen on some port passed to the constructor and accept connections
+ *	asynchronously.
+ *
+ */
+class CServer: public IConnectable
+{
 public:
 	CServer(boost::asio::io_service& IO_Service, unsigned short const Port);
 	virtual ~CServer();
+	virtual void Close(){}
+	virtual void Open(){}
+	virtual void Send(){}
 private:
 
 	tcp::acceptor m_Acceptor;
