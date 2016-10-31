@@ -6,10 +6,9 @@
  */
 #include "Server.h"
 #include "Session.h"
-#include <memory>
-#include <utility>
 
-namespace Net {
+namespace Net
+{
 
 CServer::CServer(boost::asio::io_service& IO_Service, unsigned short const Port):
 		m_Acceptor(IO_Service, tcp::endpoint(tcp::v4(), Port)),
@@ -37,6 +36,9 @@ void CServer::Accept()
       });
 }
 
-
+void CServer::Open()
+{
+    Accept();
+}
 
 } /* namespace Net */

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+message Msg
+{
+    repeated google.protobuf.Any details = 1;
+}
+
+message OpenConnection
+{
+    string ip = 1;
+    int32 port = 2;
+}
+
+

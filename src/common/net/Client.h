@@ -10,6 +10,8 @@
 #define SRC_NET_CLIENT_H_
 #include <boost/asio.hpp>
 #include <string>
+#include "IConnectable.h"
+
 namespace Net {
 
 /*! \brief Client like entity which connects to another remote client.
@@ -17,13 +19,16 @@ namespace Net {
  *	An object of type CClient will connect to the remote client which has a server (hopefully) listening on the specified end address.
  *
  */
-class CClient {
+class CClient : IConnectable{
 public:
 	CClient(boost::asio::io_service& IO_Service, unsigned short const Port, std::string&& IpAddress);
 	virtual ~CClient();
-	virtual void Open();
-	virtual void Send();
-	virtual void Close();
+
+	//IConnectable interface
+	virtual void Open() override;
+	virtual void Send() override;
+	virtual void Close() override;
+
 private:
 	unsigned short m_DestinationPort; ///< Remote server port
 	std::string m_DestinationIp; ///< Remote server IP as string (e.g. 1.1.1.1 )

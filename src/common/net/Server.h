@@ -26,9 +26,11 @@ class CServer: public IConnectable
 public:
 	CServer(boost::asio::io_service& IO_Service, unsigned short const Port);
 	virtual ~CServer();
-	virtual void Close(){}
-	virtual void Open(){}
-	virtual void Send(){}
+
+    // IConnectable interface
+	virtual void Close() override {}
+	virtual void Open() override ;
+	virtual void Send() override {}
 private:
 
 	tcp::acceptor m_Acceptor;

@@ -12,7 +12,8 @@
 
 using boost::asio::ip::tcp;
 
-namespace Net {
+namespace Net
+{
 
 //Represents a communication
 class CSession : public std::enable_shared_from_this<CSession> {
@@ -24,8 +25,7 @@ private:
 	void Read();
 	void Write(size_t length);
 	tcp::socket m_Socket;
-	static const uint32_t MAX_LENGTH = 1024;
-	char m_Data[CSession::MAX_LENGTH];
+	std::array<uint8_t, 1024> m_Buffer;
 };
 
 } /* namespace Net */
