@@ -6,7 +6,7 @@
  */
 
 #include "Session.h"
-#include "extcomm.pb.h"
+#include <iostream>
 
 namespace Net {
 
@@ -25,20 +25,21 @@ void CSession::Read()
     m_Socket.async_read_some(boost::asio::buffer(m_Buffer),
         [this, self](boost::system::error_code ec, std::size_t length)
         {
-          if (!ec)
-          {
-              Msg msg;
-              for (::google::protobuf::Any const& detail : msg.details())
-              {
-                  if (detail.Is<OpenConnection>())
-                  {
-                      OpenConnection OpenConnectionMsg;
-                      detail.UnpackTo(&OpenConnectionMsg);
-
-                  }
-              }
-            Write(length);
-          }
+            if (!ec)
+            {
+//                Msg msg;
+//                for (::google::protobuf::Any const& detail : msg.details())
+//                {
+//                    if (detail.Is<OpenConnection>())
+//                    {
+//                        OpenConnection OpenConnectionMsg;
+//                        detail.UnpackTo(&OpenConnectionMsg);
+//                        std::cout<<"Received Open Connection Msg in CSession::Read():"<<OpenConnectionMsg.m_Ip();
+//
+//                    }
+//                }
+                Write(length);
+            }
         });
 }
 

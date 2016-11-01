@@ -3,25 +3,23 @@
 
 #set(Boost_DEBUG 1)
 #set(Protobuf_DEBUG 1)
-
-cmake_minimum_required(VERSION 3.5.1)
-set (CMAKE_CXX_STANDARD 14)
 project(STC)
-#list(APPEND CMAKE_PREFIX_PATH /usr/local/lib)
+include(FindPkgConfig)
 include(FindProtobuf)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-find_package(Threads)
-
-set(Protobuf_SRC_ROOT_FOLDER ${CMAKE_SOURCE_DIR}/protobuf)
-set(PROTOBUF_IMPORT_DIRS ${Protobuf_SRC_ROOT_FOLDER}/src) # Additional .proto files can be found here
-find_package(Protobuf REQUIRED)
-
+cmake_minimum_required(VERSION 3.5.1)
+set(CMAKE_CXX_STANDARD 14)
+set(PROTOBUF_IMPORT_DIRS /usr/local/include) # Additional .proto files can be found here
 set(BOOST_ROOT ${CMAKE_SOURCE_DIR}/boost)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(/usr/local/include)
+find_package(Threads)
+find_package(Protobuf REQUIRED)
 find_package(Boost 1.62.0 COMPONENTS thread system filesystem program_options REQUIRED)
 
+# No find_package(grpc) seems to exist yet, using FindPkgConfig to get correct linker flags for grpc.
+# pgkconfig is created when building grpc from source.
+pkg_check_modules(GRPC grpc++)
 if(Boost_FOUND)
-	message(${Boost_LIBRARIES})
 	include_directories(${CMAKE_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 
     # add_subdirectory(src/common/msg)
@@ -30,14 +28,14 @@ if(Boost_FOUND)
 			src/common/net/Client.cpp 
 			src/common/net/Session.cpp 
 			src/common/net/ConnectionManager.cpp)
-
+  
     file(GLOB ProtoFiles "${CMAKE_CURRENT_SOURCE_DIR}/src/common/msg/*.proto")
     PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
-    get_filename_component(ProtoSourcesNames ${ProtoSources} NAME)
-    set(ProtoSources ${CMAKE_CURRENT_BINARY_DIR}/${ProtoSourcesNames})
+
     set_source_files_properties(${ProtoSources} PROPERTIES GENERATED TRUE)
     add_library(STC_Msg STATIC ${ProtoSources} ${ProtoHeaders})
     target_link_libraries(STC_Msg ${PROTOBUF_LIBRARY})
+	target_link_libraries(STC_Msg ${GRPC_LDFLAGS})
 
 	add_library(STC_Net STATIC ${NET_SOURCES})
     target_link_libraries(STC_Net ${Boost_LIBRARIES})

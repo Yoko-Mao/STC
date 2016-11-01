@@ -1,24 +1,16 @@
 ## STC
 
 # Project structure
-ROOT STC
-|
-|--boost
-|
-|--protobuf
-|
-|--src
+In the CMakeLists.txt it is expected that a boost directory is present with boost installation since BOOST_ROOT_DIR points to <STC>/boost.
 
-In the CMakeLists.txt it is expected that a boost directory is present with boost installation.
-BOOST_ROOT_DIR points to <STC>/boost.
-
-It is also expected that protobuf installation is present (dynamic linking) in a subdir <STC>/protobuf.
-Some variables of the CMakeLists.txt expect this directory to exist with the src tree and additional include .proto files present.
+It is also expected that grpc and protobuf installations are present.
+An alternative to the existing FindProtobuf is provided under <STC>/FindProtobuf.cmake, this file
+also builds the required grpc files using the protoc compiler and grpc plugin.
 
 # How to build: 
 
 1. Get Boost. Install in <STC>/boost
-2. Get proto. Install in <STC>/protobuf
+2. Get gRPC. Install
 
 mkdir <some dir>
 cd <some dir>

@@ -1,11 +1,8 @@
 /*! \file */
 #include <iostream>
 #include "boost/program_options.hpp"
-
-#include "common/net/Client.h"
-#include "../common/net/Client.h"
-#include "../common/net/Server.h"
-#include <common/net/Server.h>
+#include <grpc++/grpc++.h>
+#include "extcomm.grpc.pb.h"
 
 namespace po = boost::program_options;
 
@@ -19,6 +16,18 @@ struct CCommandLineArguments
 	unsigned short ClientPort = 8000; ///< Port on which a remote client is listening for incoming connections (remote client its serverport).
 };
 CCommandLineArguments HandleCommandLineArguments(int, char*[]);
+
+
+// Logic and data behind the server's behavior.
+class ExtCommImpl final : public ::comm::ManagementComm::Service
+{
+	//Status SayHello(ServerContext* context, const HelloRequest* request,
+	//				HelloReply* reply) override {
+	//	std::string prefix("Hello ");
+	//	reply->set_message(prefix + request->name());
+	//	return Status::OK;
+	//}
+};
 
 /*! \brief Application entry point.
  *
@@ -35,10 +44,24 @@ int main(int argc, char *argv[])
 	if (Arguments.ShouldTerminateApplication)
 		return 1;
 
-	boost::asio::io_service IO_Service;
-	Net::CServer Server(IO_Service, Arguments.ServerPort);
-	Net::CClient Client(IO_Service, Arguments.ClientPort, "127.0.0.1");
-	IO_Service.run();
+
+	std::string server_address("0.0.0.0:50051");
+	ExtCommImpl service;
+
+	::grpc::ServerBuilder builder;
+	// Listen on the given address without any authentication mechanism.
+	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+	// Register "service" as the instance through which we'll communicate with
+	// clients. In this case it corresponds to an *synchronous* service.
+	builder.RegisterService(&service);
+	// Finally assemble the server.
+	std::unique_ptr<::grpc::Server> server(builder.BuildAndStart());
+	std::cout << "Server listening on " << server_address << std::endl;
+
+	// Wait for the server to shutdown. Note that some other thread must be
+	// responsible for shutting down the server for this call to ever return.
+	server->Wait();
+
 
 	return 0;
 }

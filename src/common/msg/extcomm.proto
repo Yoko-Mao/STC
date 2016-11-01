@@ -1,16 +1,14 @@
 syntax = "proto3";
-
-import "google/protobuf/any.proto";
-
-message Msg
+package comm;
+import "google/protobuf/empty.proto";
+message EndPoint
 {
-    repeated google.protobuf.Any details = 1;
+    string m_Ip = 1;
+    int32 m_Port = 2;
 }
-
-message OpenConnection
+service ManagementComm
 {
-    string ip = 1;
-    int32 port = 2;
+    rpc OpenConnection(EndPoint) returns (google.protobuf.Empty){}
 }
 
 
