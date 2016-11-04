@@ -9,7 +9,6 @@ include(FindProtobuf)
 cmake_minimum_required(VERSION 3.5.1)
 set(CMAKE_CXX_STANDARD 14)
 set(PROTOBUF_IMPORT_DIRS /usr/local/include) # Additional .proto files can be found here
-set(BOOST_ROOT ${CMAKE_SOURCE_DIR}/boost)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(/usr/local/include)
 find_package(Threads)
