@@ -29,8 +29,7 @@ if(Boost_FOUND)
 			src/common/net/ConnectionManager.cpp)
   
     file(GLOB ProtoFiles "${CMAKE_CURRENT_SOURCE_DIR}/src/common/msg/*.proto")
-    PROTOBUF_GENERATE_CPP(ProtoSources ProtoHeaders ${ProtoFiles})
-
+    PROTOBUF_GENERATE_CPP_RUBY(ProtoSources ProtoHeaders ${ProtoFiles})
     set_source_files_properties(${ProtoSources} PROPERTIES GENERATED TRUE)
     add_library(STC_Msg STATIC ${ProtoSources} ${ProtoHeaders})
     target_link_libraries(STC_Msg ${PROTOBUF_LIBRARY})
@@ -45,7 +44,7 @@ if(Boost_FOUND)
 	add_library(STC_Core STATIC ${CORE_SOURCES})
 
 	# Client application
-	set(CLIENT_SOURCES src/client/Main.cpp)
+	set(CLIENT_SOURCES src/client/Main.cpp src/client/RPC.cpp src/client/RPC.h)
 	add_executable(STC_Client ${CLIENT_SOURCES} ${PROTO_SRCS} ${PROTO_HDRS})
 
 	# Server application

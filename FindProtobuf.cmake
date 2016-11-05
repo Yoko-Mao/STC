@@ -105,7 +105,11 @@
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-function(PROTOBUF_GENERATE_CPP SRCS HDRS)
+
+#  SRCS and HDRS contain generated cpp header and cpp files.
+#  Ruby files are generated but not returned (no further compiling/linking required)
+#
+function(PROTOBUF_GENERATE_CPP_RUBY SRCS HDRS)
   if(NOT ARGN)
     message(SEND_ERROR "Error: PROTOBUF_GENERATE_CPP() called without any proto files")
     return()
@@ -152,16 +156,25 @@ function(PROTOBUF_GENERATE_CPP SRCS HDRS)
       COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL} 
       DEPENDS ${ABS_FIL} ${PROTOBUF_PROTOC_EXECUTABLE}
-      COMMENT "Running C++ protocol buffer compiler on ${FIL} test"
-      VERBATIM 
+      VERBATIM
       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.grpc.pb.cc"
              "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.grpc.pb.h"
       COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --grpc_out  ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL} --plugin=protoc-gen-grpc=/usr/local/bin/grpc_cpp_plugin
       DEPENDS ${ABS_FIL} ${PROTOBUF_PROTOC_EXECUTABLE}
-      COMMENT "Running C++ protocol buffer compiler on ${FIL} with grpc plugin"
-      VERBATIM )
-
+      VERBATIM
+      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb.rb"
+      COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
+      ARGS --ruby_out  ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL}
+      DEPENDS ${ABS_FIL} ${PROTOBUF_PROTOC_EXECUTABLE}
+      VERBATIM
+      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_services_pb.rb"
+      COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
+      ARGS --grpc_out ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL} --plugin=protoc-gen-grpc=/usr/local/bin/grpc_ruby_plugin
+      DEPENDS ${ABS_FIL} ${PROTOBUF_PROTOC_EXECUTABLE}
+      COMMENT "Running Ruby and CPP protocol buffer compiler on ${FIL}"
+      VERBATIM
+    )
 
 
   endforeach()
@@ -207,9 +220,11 @@ function(PROTOBUF_GENERATE_PYTHON SRCS)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
 
     list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py")
+    message("Got those: ${ARGN}")
     add_custom_command(
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py"
-      COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE} --python_out ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL}
+      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb2.py"
+      COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
+      ARGS --python_out  ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL}
       DEPENDS ${ABS_FIL} ${PROTOBUF_PROTOC_EXECUTABLE}
       COMMENT "Running Python protocol buffer compiler on ${FIL}"
       VERBATIM )

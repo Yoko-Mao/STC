@@ -1,9 +1,7 @@
 /*! \file */
 #include <iostream>
 #include "boost/program_options.hpp"
-#include <grpc++/grpc++.h>
-#include "extcomm.grpc.pb.h"
-
+#include "client/RPC.h"
 namespace po = boost::program_options;
 
 /*! \brief Parsed result of command line arguments
@@ -11,23 +9,12 @@ namespace po = boost::program_options;
  */
 struct CCommandLineArguments
 {
-	bool ShouldTerminateApplication; ///< This flag is toggled as result of wrong commandline input, to indicate early termination
-	unsigned short ServerPort = 8000; ///< Port on which the client is listening for incoming connection on localhost.
-	unsigned short ClientPort = 8000; ///< Port on which a remote client is listening for incoming connections (remote client its serverport).
+	bool m_ShouldTerminateApplication; ///< This flag is toggled as result of wrong commandline input, to indicate early termination
+    unsigned short m_LocalRPC_Port = 50051; ///< Port on which local RPC clients listens for incommng connections.
+	unsigned short m_ServerPort = 8000; ///< Port on wich game server listens for incomming connections
+	std::string m_ServerIp = "127.0.0.1"; ///< Ip of game server;
 };
 CCommandLineArguments HandleCommandLineArguments(int, char*[]);
-
-
-// Logic and data behind the server's behavior.
-class ExtCommImpl final : public ::comm::ManagementComm::Service
-{
-	//Status SayHello(ServerContext* context, const HelloRequest* request,
-	//				HelloReply* reply) override {
-	//	std::string prefix("Hello ");
-	//	reply->set_message(prefix + request->name());
-	//	return Status::OK;
-	//}
-};
 
 /*! \brief Application entry point.
  *
@@ -38,31 +25,14 @@ class ExtCommImpl final : public ::comm::ManagementComm::Service
  */
 int main(int argc, char *argv[])
 {
-	CCommandLineArguments Arguments = HandleCommandLineArguments(argc, argv);
+	std::cout << "Launching client" << std::endl;
+ 	CCommandLineArguments Arguments = HandleCommandLineArguments(argc, argv);
 
 	// Error occured while parsing command line arguments. Proper error should've been dumped already.
-	if (Arguments.ShouldTerminateApplication)
+	if (Arguments.m_ShouldTerminateApplication)
 		return 1;
 
-
-	std::string server_address("0.0.0.0:50051");
-	ExtCommImpl service;
-
-	::grpc::ServerBuilder builder;
-	// Listen on the given address without any authentication mechanism.
-	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-	// Register "service" as the instance through which we'll communicate with
-	// clients. In this case it corresponds to an *synchronous* service.
-	builder.RegisterService(&service);
-	// Finally assemble the server.
-	std::unique_ptr<::grpc::Server> server(builder.BuildAndStart());
-	std::cout << "Server listening on " << server_address << std::endl;
-
-	// Wait for the server to shutdown. Note that some other thread must be
-	// responsible for shutting down the server for this call to ever return.
-	server->Wait();
-
-
+	CClientRPC_Impl::StartLocalRPC_Client(Arguments.m_LocalRPC_Port);
 	return 0;
 }
 
@@ -77,33 +47,32 @@ CCommandLineArguments HandleCommandLineArguments(int argc, char* argv[])
 {
 	CCommandLineArguments CommandLineArguments;
 	try
-	{
-		po::options_description desc("Allowed options");
-		desc.add_options()
-			("help", "produce help message")
-			("serverport,sp", po::value<unsigned short>(&CommandLineArguments.ServerPort), "Set local listening port")
-			("clientport,cp", po::value<unsigned short>(&CommandLineArguments.ClientPort), "Set remote client port");
+  {
+    po::options_description desc("Allowed options");
+    desc.add_options()("help", "produce help message"), ("local-rpc-port", po::value < unsigned short > (&CommandLineArguments.m_LocalRPC_Port), "Set local RPC port"),
+    ("remote-server-ip", po::value<std::string>(&CommandLineArguments.m_ServerIp), "Set remote server ip"),
+    ("remote-server-port", po::value<unsigned short> (&CommandLineArguments.m_ServerPort), "Set remote server port");
 
-		po::variables_map vm;
-		po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
 
-		if (vm.count("help")) {
-			std::cout << desc << "\n";
-			CommandLineArguments.ShouldTerminateApplication = true;
-			return CommandLineArguments;
-		}
+    if (vm.count("help"))
+		{
+      std::cout << desc << "\n";
+      CommandLineArguments.m_ShouldTerminateApplication = true;
+      return CommandLineArguments;
+    }
 
 		po::notify(vm);
 
-		CommandLineArguments.ShouldTerminateApplication = false;
+		CommandLineArguments.m_ShouldTerminateApplication = false;
 		return CommandLineArguments;
 	}
 	catch(std::exception& e)
 	{
 		std::cerr << "Error occured while parsing commandline input."<< std::endl <<e.what() << "\n";
-		CommandLineArguments.ShouldTerminateApplication = true;
+		CommandLineArguments.m_ShouldTerminateApplication = true;
 		return CommandLineArguments;
 	}
-
 }
 

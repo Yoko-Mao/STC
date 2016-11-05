@@ -3,7 +3,7 @@
 # How to build: 
 
 1. Build & install following Boost libs: program options
-2. Build & install gRPC
+2. Build & install gRPC. Required plugins are c++ and Ruby.
 
 mkdir <some dir>
 cd <some dir>

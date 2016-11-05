@@ -4,11 +4,11 @@ import "google/protobuf/empty.proto";
 message EndPoint
 {
     string m_Ip = 1;
-    int32 m_Port = 2;
+    int32  m_Port = 2;
 }
-service ManagementComm
+service ExternalCommunication
 {
-    rpc OpenConnection(EndPoint) returns (google.protobuf.Empty){}
+    rpc ConnectToServer(EndPoint) returns (google.protobuf.Empty){}
 }
 
 
