@@ -7,11 +7,11 @@ namespace po = boost::program_options;
 /*! \brief Parsed result of command line arguments
  *
  */
-struct CCommandLineArguments
+struct CommandLineArguments_t
 {
 	bool ShouldTerminateApplication; ///< This flag is toggled as result of wrong commandline input, to indicate early termination
 };
-CCommandLineArguments HandleCommandLineArguments(int, char*[]);
+CommandLineArguments_t HandleCommandLineArguments(int, char*[]);
 
 /*! \brief Application entry point.
  *
@@ -22,7 +22,7 @@ CCommandLineArguments HandleCommandLineArguments(int, char*[]);
  */
 int main(int argc, char *argv[])
 {
-	CCommandLineArguments Arguments = HandleCommandLineArguments(argc, argv);
+	   CommandLineArguments_t Arguments = HandleCommandLineArguments(argc, argv);
 
 	// Error occured while parsing command line arguments. Proper error should've been dumped already.
 	if (Arguments.ShouldTerminateApplication)
@@ -38,9 +38,9 @@ int main(int argc, char *argv[])
  *	\returns CommandLine string arguments parsed into an element of type CCommandLineArguments.
  *
  */
-CCommandLineArguments HandleCommandLineArguments(int argc, char* argv[])
+CommandLineArguments_t HandleCommandLineArguments(int argc, char* argv[])
 {
-	CCommandLineArguments CommandLineArguments;
+	   CommandLineArguments_t CommandLineArguments;
 	try
 	{
 		CommandLineArguments.ShouldTerminateApplication = false;

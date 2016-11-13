@@ -8,8 +8,6 @@ class CServerStub
 public:
     CServerStub(std::shared_ptr<::grpc::Channel> channel): m_Stub(::comm::InternalCommunication::NewStub(channel)) {}
 
-    // Assambles the client's payload, sends it and presents the response back
-    // from the server.
     ::grpc::Status ConnectToServer(const std::string& user)
     {
       std::cout << "Internal Connect To Server" << std::endl;
@@ -17,6 +15,21 @@ public:
       ::grpc::ClientContext ClientContext;
       ::google::protobuf::Empty Empty;
       return m_Stub->ConnectToServer(&ClientContext, ClientIdentification, &Empty);
+    }
+    ::grpc::Status GetGames()
+    {
+      ::grpc::ClientContext ClientContext;
+      ::google::protobuf::Empty Empty;
+      ::comm::GameList Games;
+      return m_Stub->GetGames(&ClientContext, Empty, &Games);
+    }
+    ::grpc::Status AddGame(std::string const & Name)
+    {
+      ::grpc::ClientContext ClientContext;
+      ::comm::Game Game;
+      Game.set_m_name(Name);
+      ::google::protobuf::Empty Empty;
+      return m_Stub->AddGame(&ClientContext,  Game, &Empty);
     }
 
 private:

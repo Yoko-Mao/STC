@@ -19,48 +19,66 @@ find_package(Boost 1.62.0 COMPONENTS thread system filesystem program_options RE
 # pgkconfig is created when building grpc from source.
 pkg_check_modules(GRPC grpc++)
 if(Boost_FOUND)
-	include_directories(${CMAKE_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
+    include_directories(${CMAKE_SOURCE_DIR}/src ${Boost_INCLUDE_DIRS})
 
     # add_subdirectory(src/common/msg)
-	# Net static library
-	set(NET_SOURCES src/common/net/Server.cpp 
-			src/common/net/Client.cpp 
-			src/common/net/Session.cpp 
-			src/common/net/ConnectionManager.cpp)
+    # Net static library
+    set(NET_SOURCES 
+        src/common/net/Server.cpp 
+        src/common/net/Client.cpp 
+        src/common/net/Session.cpp 
+        src/common/net/ConnectionManager.cpp)
   
     file(GLOB ProtoFiles "${CMAKE_CURRENT_SOURCE_DIR}/src/common/msg/*.proto")
     PROTOBUF_GENERATE_CPP_RUBY(ProtoSources ProtoHeaders ${ProtoFiles})
     set_source_files_properties(${ProtoSources} PROPERTIES GENERATED TRUE)
     add_library(STC_Msg STATIC ${ProtoSources} ${ProtoHeaders})
     target_link_libraries(STC_Msg ${PROTOBUF_LIBRARY})
-	target_link_libraries(STC_Msg ${GRPC_LDFLAGS})
+    target_link_libraries(STC_Msg ${GRPC_LDFLAGS})
 
-	add_library(STC_Net STATIC ${NET_SOURCES})
+    add_library(STC_Net STATIC ${NET_SOURCES})
     target_link_libraries(STC_Net ${Boost_LIBRARIES})
-	target_link_libraries(STC_Net STC_Msg)
+    target_link_libraries(STC_Net STC_Msg)
 
     # Core static library
-	set(CORE_SOURCES src/common/core/Core.cpp src/common/core/Core.cpp src/common/core/Core.h)
-	add_library(STC_Core STATIC ${CORE_SOURCES})
+    set(CORE_SOURCES 
+        src/common/core/Core.cpp 
+        src/common/core/utilities/CommandLine.cpp
+        src/common/core/task/CV_WorkOrder.cpp
+        src/common/core/task/IWorkOrder.cpp
+        src/common/core/task/MessageQueue.cpp
+        src/common/core/task/Thread.cpp)
+    add_library(STC_Core STATIC ${CORE_SOURCES})
 
 	# Client application
-	set(CLIENT_SOURCES src/client/Main.cpp src/client/RPC.cpp src/client/RPC.h)
-	add_executable(STC_Client ${CLIENT_SOURCES} ${PROTO_SRCS} ${PROTO_HDRS})
+    set(CLIENT_SOURCES
+        src/client/RPC.cpp)
+
+    add_executable(STC_Client src/client/Main.cpp ${CLIENT_SOURCES} ${PROTO_SRCS} ${PROTO_HDRS})
+    add_executable(STC_UnitTest src/MainUnitTest.cpp ${CLIENT_SOURCES} ${LAUNCHSERVER_SOURCES} ${PROTO_SRCS} ${PROTO_HDRS})
 
 	# Server application
-	set(LAUNCHSERVER_SOURCES src/launchserver/Main.cpp)
-	add_executable(STC_LaunchServer ${LAUNCHSERVER_SOURCES})
+    set(LAUNCHSERVER_SOURCES src/launchserver/Main.cpp)
+    add_executable(STC_LaunchServer ${LAUNCHSERVER_SOURCES})
 
-	target_link_libraries(STC_Client ${Boost_LIBRARIES})
-	target_link_libraries(STC_Client ${CMAKE_THREAD_LIBS_INIT})
-	target_link_libraries(STC_Client STC_Core)
-	target_link_libraries(STC_Client STC_Net)
+    target_link_libraries(STC_Client ${Boost_LIBRARIES})
+    target_link_libraries(STC_Client ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(STC_Client STC_Core)
+    target_link_libraries(STC_Client STC_Net)
     target_link_libraries(STC_Client STC_Msg)
-	target_link_libraries(STC_LaunchServer ${Boost_LIBRARIES})
-	target_link_libraries(STC_LaunchServer ${CMAKE_THREAD_LIBS_INIT})
-	target_link_libraries(STC_LaunchServer STC_Core)
+
+
+    target_link_libraries(STC_LaunchServer ${Boost_LIBRARIES})
+    target_link_libraries(STC_LaunchServer ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(STC_LaunchServer STC_Core)
     target_link_libraries(STC_LaunchServer STC_Msg)
-	target_link_libraries(STC_LaunchServer STC_Net)
+    target_link_libraries(STC_LaunchServer STC_Net)
+
+    target_link_libraries(STC_UnitTest ${Boost_LIBRARIES})
+    target_link_libraries(STC_UnitTest ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(STC_UnitTest STC_Core)
+    target_link_libraries(STC_UnitTest STC_Net)
+    target_link_libraries(STC_UnitTest STC_Msg)
 endif()
 
 
