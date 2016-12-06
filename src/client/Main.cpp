@@ -12,6 +12,7 @@ namespace {
      */
     class CommandLineArguments_t : public Core::CommandLineArgumentsBase_t {
     public:
+
         CommandLineArguments_t(int argc, char* argv[]) : Core::CommandLineArgumentsBase_t(argc, argv) {
 
         }
@@ -36,12 +37,11 @@ namespace {
 int main(int argc, char *argv[]) {
     std::cout << "Launching client" << std::endl;
     auto Arguments = CommandLineArguments_t(argc, argv);
-
     // Error occured while parsing command line arguments. Proper error should have been dumped already.
     if (Arguments.Parse())
         return 1;
-    
-    Core::Thread_t Thread;
+
+
     CClientRPC_Impl::StartLocalRPC_Client(Arguments.m_LocalRPC_Port);
     return 0;
 }
