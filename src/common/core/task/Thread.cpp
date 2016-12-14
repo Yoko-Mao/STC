@@ -11,8 +11,6 @@
  *
  */
 Core::WorkOrderQueueThread_t::WorkOrderQueueThread_t(decltype(m_Work) Func) :
-m_WorkToDoEachIteration(Func),
-m_WorkQueue(new Core::WorkOrderQueue_t()),
 Thread_t(
 [&]
 {
@@ -25,7 +23,12 @@ Thread_t(
   }
 
   m_WorkQueue->DoAllWork();
-})
+}),
+// TODO: There MAY be a problem here as m_WorkQueue and m_WorkToDoEachIteration 
+// are dereferenced inside the Thread_t functor. Requires investigation.
+// I'm unsure about the rules concerning member initializer lists.
+m_WorkToDoEachIteration(Func),
+m_WorkQueue(new Core::WorkOrderQueue_t()) 
 {
   m_ShouldStop.store(false, std::memory_order_release);
 }
@@ -39,7 +42,6 @@ Thread_t(
  *
  */
 Core::WorkOrderQueueThread_t::WorkOrderQueueThread_t() :
-m_WorkQueue(new WorkOrderBlockingQueue_t()),
 Thread_t(
 [&]
 {
@@ -49,7 +51,8 @@ Thread_t(
   }
 
   m_WorkQueue->DoAllWork();
-})
+}),
+m_WorkQueue(new WorkOrderBlockingQueue_t())
 {
   m_ShouldStop.store(false, std::memory_order_release);
 }
@@ -67,12 +70,12 @@ Thread_t(
 bool Core::WorkOrderQueueThread_t::ScheduleWork(std::function<WorkOrderResult_t(void)> Func, std::future<Core::WorkOrderResult_t>& Future)
 {
   bool IsStopped = m_ShouldStop.load(std::memory_order_release);
-  
-  if(!IsStopped)
+
+  if (!IsStopped)
   {
-    Future = m_WorkQueue->ScheduleWork(Func); 
+    Future = m_WorkQueue->ScheduleWork(Func);
   }
-  
+
   return !IsStopped;
 }
 
@@ -88,6 +91,8 @@ bool Core::WorkOrderQueueThread_t::ScheduleWork(std::function<WorkOrderResult_t(
 void Core::WorkOrderQueueThread_t::Stop()
 {
   m_ShouldStop.store(true, std::memory_order_release);
+  
+  //Need to schedule an additional work item to unblock any blocking work queues.
   m_WorkQueue->ScheduleWork([]()
   {
     return WorkOrderResult_t();

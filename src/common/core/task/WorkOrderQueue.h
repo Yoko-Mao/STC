@@ -1,7 +1,6 @@
 #ifndef MESSAGEQUEUE_T_H
 #define MESSAGEQUEUE_T_H
 #include "common/core/task/WorkOrder.h"
-#include "common/core/task/ConcurrentQueue.h"
 #include "common/core/task/BlockingConcurrentQueue.h"
 #include <vector>
 #include <utility>

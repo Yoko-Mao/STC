@@ -5,11 +5,12 @@ lib_dir = File.join(this_dir, '../build')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
-require 'extcomm_services_pb.rb'
+require 'server_services_pb.rb'
 
 def main
-  stub = Comm::ExternalCommunication::Stub.new('localhost:50051', :this_channel_is_insecure)
-  stub.connect_to_server(Comm::EndPoint.new(m_Ip: "#{ARGV[0]}", m_Port: 1213))
+  stub = Comm::Server::Stub.new('localhost:6666', :this_channel_is_insecure)
+  stub.add_user(Comm::User.new(m_Name:"William"))
+    
 end
 
 main

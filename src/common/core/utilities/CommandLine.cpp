@@ -1,8 +1,9 @@
 #include "CommandLine.h"
 
-/*! \brief Parse commandline arguments.
+/*! \brief Parse command line arguments.
  *  The CCommandLineArguments contains the parsed parameters.
- *  \returns True if an error occured during parsing, else returns false.
+ * 
+ *  \returns True if an error occurred during parsing, else returns false.
  *
  */
 bool Core::CommandLineArgumentsBase_t::Parse() {
