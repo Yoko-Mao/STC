@@ -59,24 +59,22 @@ m_WorkQueue(new WorkOrderBlockingQueue_t())
 
 /*! \brief Schedules work on the work queue assigned to this thread.
  *
- *  When the tread is closing down no new work can be scheduled on the thread 
- *  any longer and the function will return false.
+ *  When the tread is closing down no new work items can be scheduled on the thread 
+ *  and 'ScheduleWork' will return boost::none instead of a future.
  * 
  *  \param Func Closure to be executed by this thread.
- *  \param Future std::future that will be completed when the work item was handled.
- *  \returns True if queue allowed work to be scheduled, else false.
+ * 
+ *  \returns Future for the work order if it could be scheduled else boost::none
  *
  */
-bool Core::WorkOrderQueueThread_t::ScheduleWork(std::function<WorkOrderResult_t(void)> Func, std::future<Core::WorkOrderResult_t>& Future)
+boost::optional<std::future<Core::WorkOrderResult_t> > Core::WorkOrderQueueThread_t::ScheduleWork(std::function<Core::WorkOrderResult_t(void)> Func)
 {
-  bool IsStopped = m_ShouldStop.load(std::memory_order_release);
-
-  if (!IsStopped)
+  if (!m_ShouldStop.load(std::memory_order_acquire))
   {
-    Future = m_WorkQueue->ScheduleWork(Func);
+    return m_WorkQueue->ScheduleWork(Func);
   }
 
-  return !IsStopped;
+  return boost::none;
 }
 
 /*! \brief Stops the thread.

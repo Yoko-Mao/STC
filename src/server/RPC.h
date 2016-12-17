@@ -27,11 +27,10 @@ public:
   RPC_i& operator=(RPC_i&&) = delete;
   RPC_i(RPC_i const&) =delete;
   RPC_i(RPC_i&&) = delete;
-  virtual void StartListeningOnInterface(std::string&& LocalInterface, uint16_t Port) = 0;
-
+  
   virtual ~RPC_i() { }
-protected:
-  Core::WorkOrderResult_t AddUserImpl(std::string const&  UserName); ///< Add new user to the lobby.
+  Core::WorkOrderResult_t AddUser_Implementation(std::string const&  UserName); ///< Add new user to the lobby.
+  virtual void StartListeningOnInterface(std::string&& LocalInterface, uint16_t Port) = 0;
 private:
   Lobby_t& m_Lobby; ///< Reference to the lobby. Does not own or is resposibility for its lifetime.
 };

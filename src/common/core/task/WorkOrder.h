@@ -7,7 +7,27 @@
 #include <utility>
 namespace Core {
 
-class WorkOrderResult_t {
+class WorkOrderResult_t
+{
+public: 
+  enum class ErrorCode_t: uint32_t
+  {
+    SUCCESS,  ///< Work has been completed successfully
+    ERROR,    ///< General Error; unspecified. Values below are more specific.
+    DUPLICATE ///< Tried adding an unique item that already exists.
+  };
+  WorkOrderResult_t():m_Value(ErrorCode_t::SUCCESS) {}
+  WorkOrderResult_t(ErrorCode_t Value): m_Value(Value) {}
+  WorkOrderResult_t(ErrorCode_t Value, std::string const& Info): m_Value(Value), m_Info(Info) {}
+  inline bool IsSuccessfull() const{return m_Value == ErrorCode_t::SUCCESS;}
+  inline bool IsFailure() const {return m_Value != ErrorCode_t::SUCCESS;}
+  inline std::string GetReasonForFailure(){ return m_Info;}
+  inline ErrorCode_t GetErrorCode(){return m_Value;}
+  
+private:
+    ErrorCode_t m_Value; ///< Indicates success or failure
+    std::string m_Info; ///< More info why the call succeeded or failed.
+ 
 };
 
 

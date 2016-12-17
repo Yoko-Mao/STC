@@ -40,7 +40,7 @@ class MyAppSession(ApplicationSession):
 
         for i in range(10):
             self.log.info('calling com.server.adduser')
-            res = yield self.call(u'com.server.adduser')
+            res = yield self.call(u'com.server.adduser', 'william')
             self.log.info('result: {}'.format(res))
 
         yield self.leave()

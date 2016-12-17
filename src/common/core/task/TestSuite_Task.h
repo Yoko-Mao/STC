@@ -1,7 +1,8 @@
 #ifndef TESTSUITE_TASK_H
 #define TESTSUITE_TASK_H
-#include <boost/test/included/unit_test.hpp>
 #include "common/core/task/Thread.h"
+#include <boost/test/included/unit_test.hpp>
+#include <boost/optional.hpp>
 #include <iostream>
 
 BOOST_AUTO_TEST_SUITE(MessageQueue)
@@ -26,12 +27,12 @@ BOOST_AUTO_TEST_CASE(Push)
     Test_t() : m_NumberL(0), m_Thread() { }
     Core::WorkOrderQueueThread_t m_Thread;
 
-    auto IncreaseNumberL(std::future<Core::WorkOrderResult_t>& Res)
+    auto IncreaseNumberL()
     {
       return m_Thread.ScheduleWork([&]
       {
         m_NumberL++; return Core::WorkOrderResult_t();
-      }, Res);
+      });
     }
 
   };
@@ -46,8 +47,8 @@ BOOST_AUTO_TEST_CASE(Push)
       {
         for (int j = 0; j < NUM_MESSSAGE_EACH_PROD_THREAD; j++)
         {
-          std::future<Core::WorkOrderResult_t> Fut;
-          Test.IncreaseNumberL(Fut);
+          //Don't wait for the reply; dont really care it should work.
+          boost::optional<std::future<Core::WorkOrderResult_t> > Future = Test.IncreaseNumberL();
         }
       }));
   }

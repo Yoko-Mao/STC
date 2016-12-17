@@ -60,7 +60,7 @@
         },
         {
             "type": "guest",
-            "executable": "STC_Server",
+            "executable": "../STC_Server",
             "arguments": []
         }
    ]

@@ -1,5 +1,6 @@
 #include "RPC.h"
-
+#include <tuple>
+#include <functional>
 GRPC_t::GRPC_t(Lobby_t& Lobby) :
 RPC_i(Lobby)
 {
@@ -32,12 +33,14 @@ WAMP_t::~WAMP_t()
  * 
  *  \param UserName The name of the user that should be added
  * 
- *  \return OK if user added, failure if user not added.
+ *  \return WorkOrderResult that indicates whether or not the work was successfull.
  * 
  */
-Core::WorkOrderResult_t RPC_i::AddUserImpl(std::string const& UserName)
+Core::WorkOrderResult_t RPC_i::AddUser_Implementation(std::string const& UserName)
 {
-  return m_Lobby.AddUser(UserName).get();
+  auto Optional = m_Lobby.AddUser_Threadsafe(UserName);
+
+  return (Optional) ? Optional->get() : Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::ERROR);
 }
 
 /*! \brief Google RPC wrapper for AddUserImpl.
@@ -83,10 +86,86 @@ void GRPC_t::StartListeningOnInterface(std::string&& Ip, uint16_t Port)
   // responsible for shutting down the server for this call to ever return.
   server->Wait();
 }
+namespace
+{ 
+  template<typename F, typename T, std::size_t... I>
+  decltype(auto) CallFunctionWithTuple_Impl(RPC_i* Obj, F f,T t, std::index_sequence<I...>)
+  {
+    return (Obj->*f)(std::get<I>(t)...);
+  }
 
-void WAMP_t::AddUser(autobahn::wamp_invocation invocation)
-{
-  std::cout << "Got to add an user"<<std::endl;
+  template<typename F, typename... T>
+  decltype(auto) CallFunctionWithTuple(RPC_i* Obj, F f,const std::tuple<T...>& a)
+  {
+    auto Indices = std::make_index_sequence<sizeof...(T)>();
+    return CallFunctionWithTuple_Impl(Obj, f, a, Indices);
+  }
+
+  /*! \brief Extract parameters from Autobahn interface and call required implementation function.
+   * 
+   *  The point of this function is to easily implement new WAMP RPCs.
+   *  ParseAndExecuteWAMP_RPC should be called from the entry point of the RPC that is automatically 
+   *  called by autobahn when a call is received.
+   *  The required implementation function is supplied from the RPC entry point as parameter "Function".
+   *  This function is executed with the parameters passed by the RPC (extracted from the Invocation).
+   *  
+   *  The key idea is that the implementation function its definition defines the data that 
+   *  should've been sent with the RPC. For each parameter of that function a data member should be present
+   *  in the Invocation.
+   * 
+   *  This will:
+   *    - Send an Error result back if not all required arguments are present in the Invocation.
+   *    - Send the result of the implementation back after it was handled.
+   * 
+   *  This is not a member function WAMP_t because I wanted not to bloat the header file.
+   * 
+   *  \note The fact that the member is passed as templated pointer basically disables overloads 
+   *  for that member function (to avoid disambiguation). 
+   *  
+   *  \note This function blocks until the scheduled work is performed.
+   * 
+   *  \param Invocation Interface object to Autobahn library.
+   *  \param Obj Object that owns the RPC all to execute.
+   *  \param Function Implementation of RPC to execute.
+   * 
+   * 
+   */
+  template<typename... Args_t>
+  void ParseAndExecuteWAMP_RPC(autobahn::wamp_invocation Invocation, RPC_i* Obj, Core::WorkOrderResult_t(RPC_i::*Function)(Args_t...))
+  {
+    // std::decay is required because the member function params may use references or other qualifiers in its function definition.
+    std::tuple<std::decay_t<Args_t>...> tuple; 
+  
+    // Extract parameters that were passed by the RPC and put them in the tuple
+    try
+    {
+      Invocation->get_arguments(tuple);
+    }
+    catch (const std::bad_cast& e)
+    {
+      Invocation->result(std::make_tuple(static_cast<uint32_t>(Core::WorkOrderResult_t::ErrorCode_t::ERROR)));
+      return;
+    }
+    
+    //Call implementation function with params
+    Core::WorkOrderResult_t Result = CallFunctionWithTuple(Obj, Function, tuple);
+    
+    Invocation->result(std::make_tuple(static_cast<uint32_t>(Result.GetErrorCode())));
+    
+  }
+}
+
+/*! \brief WAMP RPC wrapper for AddUserImpl.
+ * 
+ *  After parsing arguments passed by Autobahn; calls 'AddUser_Implementation' with correct arguments.
+ *  
+ *  \param Invocation Interface object to Autobahn library.
+ * 
+ * 
+ */
+void WAMP_t::AddUser(autobahn::wamp_invocation Invocation)
+{  
+  ParseAndExecuteWAMP_RPC(Invocation, this, &RPC_i::AddUser_Implementation);
 }
 
 /*! \brief Connect to the WAMP server

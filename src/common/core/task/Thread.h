@@ -5,6 +5,7 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <boost/optional.hpp>
 namespace Core {
 
 /*! \brief Basic thread implementation.
@@ -48,7 +49,7 @@ public:
   WorkOrderQueueThread_t& operator=(WorkOrderQueueThread_t const& Orig) = delete;
   WorkOrderQueueThread_t& operator=(WorkOrderQueueThread_t&& Orig) = delete;
 
-  bool ScheduleWork(std::function<WorkOrderResult_t(void)> Func, std::future<WorkOrderResult_t>& Future);
+  boost::optional<std::future<WorkOrderResult_t> > ScheduleWork(std::function<WorkOrderResult_t(void)> Func);
   void Stop();
 
 private:
