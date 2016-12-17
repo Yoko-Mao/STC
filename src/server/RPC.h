@@ -1,9 +1,12 @@
 #ifndef RPC_H
 #define RPC_H
-
+#define BOOST_RESULT_OF_USE_DECLTYPE
 #include "Lobby.h"
 #include <grpc++/grpc++.h>
 #include <server.grpc.pb.h>
+#include <autobahn/autobahn.hpp>
+#include <boost/asio.hpp>
+#include <boost/version.hpp>
 #include <iostream>
 
 /*! \brief Abstract representation of a server side RCP implementation
@@ -24,7 +27,7 @@ public:
   RPC_i& operator=(RPC_i&&) = delete;
   RPC_i(RPC_i const&) =delete;
   RPC_i(RPC_i&&) = delete;
-  virtual void StartListeningOnInterfaces(std::string&& LocalInterface, std::string&& RemoteInterface) = 0;
+  virtual void StartListeningOnInterface(std::string&& LocalInterface, uint16_t Port) = 0;
 
   virtual ~RPC_i() { }
 protected:
@@ -42,7 +45,7 @@ public:
   GRPC_t(Lobby_t& Lobby);
   virtual ~GRPC_t();
   ::grpc::Status AddUser(::grpc::ServerContext*, const ::comm::User*, ::google::protobuf::Empty*) override;
-  virtual void StartListeningOnInterfaces(std::string&&, std::string&&) override;
+  virtual void StartListeningOnInterface(std::string&&, uint16_t) override;
 };
 
 /*! \brief Web Application Messaging Protocol implementation of RPC_i
@@ -53,7 +56,8 @@ class WAMP_t : public RPC_i
 public:
   WAMP_t(Lobby_t& Lobby);
   virtual ~WAMP_t();
-  virtual void StartListeningOnInterfaces(std::string&&, std::string&&) override;
+  virtual void StartListeningOnInterface(std::string&&, uint16_t) override;
+  void AddUser(autobahn::wamp_invocation);
 };
 #endif /* RPC_H */
 

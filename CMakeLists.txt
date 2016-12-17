@@ -75,6 +75,11 @@ if(Boost_FOUND)
     target_link_libraries(STC_UnitTest ${CMAKE_THREAD_LIBS_INIT})
     target_link_libraries(STC_UnitTest STC_Core)
     target_link_libraries(STC_UnitTest STC_Msg)
+
+    # http://stackoverflow.com/questions/13429656/cmake-how-to-copy-contents-of-a-directory-into-build-directory-after-make
+    add_custom_command(TARGET STC_Server POST_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_SOURCE_DIR}/src/.crossbar $<TARGET_FILE_DIR:STC_Server>/.crossbar)
 endif()
 
 

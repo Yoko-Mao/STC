@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   }
 
   Lobby_t Lobby;
-  const std::unique_ptr<RPC_i> RPC(new GRPC_t(Lobby));
-  RPC->StartListeningOnInterfaces("0.0.0.0:6666","0.0.0.0:6667");
+  const std::unique_ptr<RPC_i> RPC(new WAMP_t(Lobby));
+  RPC->StartListeningOnInterface("127.0.0.1",8000);
   return 0;
 }
