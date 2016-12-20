@@ -46,9 +46,9 @@ int main(int argc, char *argv[])
   {
     return 1;
   }
+  
+  WAMP_t WAMP;
+  WAMP.StartListeningOnInterface("127.0.0.1",8000);
 
-  Lobby_t Lobby;
-  const auto RPC = std::make_unique<WAMP_t>(Lobby);
-  RPC->StartListeningOnInterface("127.0.0.1",8000);
   return 0;
 }

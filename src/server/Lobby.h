@@ -4,6 +4,7 @@
 #include <set>
 #include <functional>
 #include <boost/optional.hpp>
+#include <msgpack.hpp>
 class User_t
 {
 public:
@@ -18,6 +19,9 @@ public:
     auto HashOther = HashFunction(Other.m_Name);
     return HashOwn < HashOther;
   }
+  
+  MSGPACK_DEFINE(m_Name)
+  
 };
 /*! \brief A lobby object stores the state of a server.
  *
@@ -34,10 +38,15 @@ public:
   virtual ~Lobby_t();
   
   boost::optional<std::future<Core::WorkOrderResult_t> >AddUser_Threadsafe(std::string const&); ///< Add a new user to this lobby.
+  boost::optional<std::future<Core::WorkOrderResult_t> >GetUsers_Threadsafe(std::set<User_t>& ); ///< Get users in lobby.
+
+
 private:
   Core::WorkOrderQueueThread_t m_Queue;
   Core::WorkOrderResult_t AddUser_Implementation(std::string const&);
+  Core::WorkOrderResult_t GetUsers_Implementation(std::set<User_t>& );
   std::set<User_t> m_Users;
+
 
 };
 

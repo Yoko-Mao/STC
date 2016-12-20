@@ -48,6 +48,7 @@ public:
   WorkOrderQueueThread_t(WorkOrderQueueThread_t&& Orig) = delete;
   WorkOrderQueueThread_t& operator=(WorkOrderQueueThread_t const& Orig) = delete;
   WorkOrderQueueThread_t& operator=(WorkOrderQueueThread_t&& Orig) = delete;
+  virtual ~WorkOrderQueueThread_t() override {Stop();}
 
   boost::optional<std::future<WorkOrderResult_t> > ScheduleWork(std::function<WorkOrderResult_t(void)> Func);
   void Stop();

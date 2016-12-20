@@ -7,10 +7,10 @@ project(STC)
 include(FindPkgConfig)
 include(FindProtobuf)
 cmake_minimum_required(VERSION 3.5.1)
-set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(PROTOBUF_IMPORT_DIRS /usr/local/include) # Additional .proto files can be found here
 if(MSVC)
+  set(CMAKE_CXX_STANDARD 14)
   # Force to always compile with W4
   if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
     string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -18,8 +18,7 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
   endif()
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  # Update if necessary
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic -Werror")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -Werror -pedantic -std=c++1z") # compiling with c++1z already
 endif()
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(/usr/local/include)

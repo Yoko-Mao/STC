@@ -22,6 +22,16 @@ boost::optional<std::future<Core::WorkOrderResult_t> > Lobby_t::AddUser_Threadsa
   return m_Queue.ScheduleWork([&]{ return AddUser_Implementation(UserName);});
 }
 
+/*! \brief Add a new user to the lobby.
+ *
+ * \param UserName ID of new user to add; Expected to be unique.
+ * 
+ * \return Future that will be completed once the work item is handled or boost::none if work could not be scheduled.
+ */
+boost::optional<std::future<Core::WorkOrderResult_t> > Lobby_t::GetUsers_Threadsafe(std::set<User_t>&  Users)
+{
+  return m_Queue.ScheduleWork([&]{ return GetUsers_Implementation(Users);});
+}
 /*! \brief Implementation to add new user to Lobby.
  *
  * Not threadsafe; Should not be called from outside the lobby.
@@ -30,7 +40,7 @@ boost::optional<std::future<Core::WorkOrderResult_t> > Lobby_t::AddUser_Threadsa
  * \param UserName ID of new user to add; Expected to be unique.
  * 
  * 
- * \return future that will be completed once the work item is handled.
+ * \return Future that will be completed once the work item is handled.
  */
 Core::WorkOrderResult_t Lobby_t::AddUser_Implementation(std::string const& UserName)
 {
@@ -44,4 +54,14 @@ Core::WorkOrderResult_t Lobby_t::AddUser_Implementation(std::string const& UserN
     return Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::SUCCESS);
   }
 
+}
+
+Core::WorkOrderResult_t Lobby_t::GetUsers_Implementation(std::set<User_t>& Users)
+{
+  for (auto User: m_Users)
+  {
+    Users.insert(User);
+  }
+  
+  return Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::SUCCESS);
 }

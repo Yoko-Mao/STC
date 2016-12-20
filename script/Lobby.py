@@ -1,82 +1,25 @@
-#!/usr/bin/env python
-
-import txaio
-txaio.use_twisted()
-
-from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.application.internet import ClientService
+from Base import Base
 
-from autobahn.wamp.types import ComponentConfig
-from autobahn.twisted.wamp import ApplicationSession, WampWebSocketClientFactory
+class Lobby(Base):
 
-def add2(a, b):
-    print('add2 called: {} {}'.format(a, b))
-    return a + b
+    def __init__(self, RealmName):
+        Base.__init__(self, RealmName)
 
-
-class MyAppSession(ApplicationSession):
-
-    def __init__(self, config):
-        ApplicationSession.__init__(self, config)
-        self._countdown = 5
-
-    def onConnect(self):
-        self.log.info('transport connected')
-
-        # lets join a realm .. normally, we would also specify
-        # how we would like to authenticate here
-        self.join(self.config.realm)
-
-    def onChallenge(self, challenge):
-        self.log.info('authentication challenge received')
-
+    def Test(self):
+        import ipdb
+        ipdb.set_trace()
     @inlineCallbacks
     def onJoin(self, details):
-        self.log.info('session joined: {}'.format(details))
+        reply = yield self.call(u'STC.lobby.users.add', 'william')
+        self.log.info('result: {}'.format(reply))
 
-        yield self.register(add2, u'com.example.add2')
+        reply = yield self.call(u'STC.lobby.users.get')
 
-        for i in range(10):
-            self.log.info('calling com.server.adduser')
-            res = yield self.call(u'com.server.adduser', 'william')
-            self.log.info('result: {}'.format(res))
-
-        yield self.leave()
-
-    def onLeave(self, details):
-        self.log.info('session left: {}'.format(details))
-        self.disconnect()
-
-    def onDisconnect(self):
-        self.log.info('transport disconnected')
-        # this is to clean up stuff. it is not our business to
-        # possibly reconnect the underlying connection
-        self._countdown -= 1
-        if self._countdown <= 0:
-            try:
-                reactor.stop()
-            except ReactorNotRunning:
-                pass
-
+        for UserName in reply.results[1]:
+            self.log.info('Got user: {}'.format(UserName))
+        #yield self.leave()
+        #self.Test()
 
 if __name__ == '__main__':
-    txaio.start_logging(level='info')
-
-    # create a WAMP session object. this is reused across multiple
-    # reconnects (if automatically reconnected)
-    session = MyAppSession(ComponentConfig(u'realm1', {}))
-
-    # create a WAMP transport factory
-    transport = WampWebSocketClientFactory(session, url=u'ws://localhost:8080/ws')
-
-    # create a connecting endpoint
-    endpoint = TCP4ClientEndpoint(reactor, 'localhost', 8080)
-
-    # create and start an automatically reconnecting client
-    service = ClientService(endpoint, transport)
-    service.startService()
-
-    # enter the event loop
-    reactor.run()
+    session = Lobby(u'realm1')
