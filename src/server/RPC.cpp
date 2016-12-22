@@ -328,9 +328,9 @@ void WAMP_t::StartListeningOnInterface(std::string&& Ip, uint16_t Port)
             m_IO.stop();
             return;
           }
-          RegisterRPC("STC.lobby.users.add", &RPC_i::AddUser_Implementation, *this);
-          RegisterRPC("STC.lobby.users.get", &RPC_i::GetUsers_Implementation, *this);
-            
+          RegisterRPC("STC.Lobby.Users.Add", &RPC_i::AddUser_Implementation, *this);
+          RegisterRPC("STC.Lobby.Users.Get", &RPC_i::GetUsers_Implementation, *this);
+
           std::cout << "RPCs registered" <<std::endl;
         });
       });
@@ -343,4 +343,41 @@ void WAMP_t::StartListeningOnInterface(std::string&& Ip, uint16_t Port)
   {
     std::cerr << e.what() << std::endl;
   }
+}
+
+/*! \brief Publish user list update to subscribers
+ * 
+ *  Connect to the WAMP router and register all RPCs that clients may call.
+ *  Connection to the WAMP router should be active; no checks are performed.
+ *  Session should be dereferencable.
+ * 
+ *  \param Added Did the user leave or join the lobby?
+ *  \param user User that joined or left the lobby.
+ * 
+ */
+void WAMP_t::PublishUser(bool Added, std::string const& UserName)
+{
+  m_Session->publish("STC.Lobby.Users.Update", std::make_tuple(Added, UserName));
+}
+
+/*! \brief Add a new user to the lobby.
+ * 
+ *  Calls base implementation and if user could be added, the user add is published.
+ * 
+ *  \param UserName The name of the user that should be added
+ * 
+ *  \return WorkOrderResult that indicates whether or not the work was successfull.
+ * 
+ */
+Core::WorkOrderResult_t WAMP_t::AddUser_Implementation(std::string const& UserName)
+{
+  Core::WorkOrderResult_t Result = RPC_i::AddUser_Implementation(UserName);
+  
+  if (Result.IsSuccessfull())
+  {
+    PublishUser(true, UserName);
+  }
+  
+  return Result;
+  
 }

@@ -1,71 +1,30 @@
-#!/usr/bin/env python
-
-import txaio
-txaio.use_twisted()
-
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.application.internet import ClientService
-
-from autobahn.wamp.types import ComponentConfig
-from autobahn.twisted.wamp import ApplicationSession, WampWebSocketClientFactory
-
+from os import environ
+import asyncio
+import subprocess
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+import time 
+import _thread
+import sys
+def Start(ToRun, RealmName="realm1"):
+    Runner = ApplicationRunner(environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"), RealmName)
+    Runner.run(ToRun)
+  
 class Base(ApplicationSession):
+  def StartSTC_Server(self):
+    args = ("../build/STC_Server")
+    self.popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+    print("Started STC_Server...Sleeping 0.1s to give the binary some start up time")
+    time.sleep(0.1) #This should really be fixed. Not quite sure what to do here query WAMP router for number joined?
+  
+  def Exit(self):
+    print("COMPLETED SUCCESSFULLY... Will now raise KeyboardInterrupt to close script")
+    self.popen.terminate()
+    _thread.interrupt_main() #Exit with KeyboardInterrupt
 
-    def __init__(self, RealmName):
-        ApplicationSession.__init__(self, ComponentConfig(RealmName, {}))
-        self._countdown = 5
+  async def onJoin(self, details):
+    self.StartSTC_Server()
+    for Test in self.GetTests():
+        await Test()
 
-        txaio.start_logging(level='info')
-
-        # create a WAMP transport factory
-        transport = WampWebSocketClientFactory(self, url=u'ws://localhost:8080/ws')
-
-        # create a connecting endpoint
-        endpoint = TCP4ClientEndpoint(reactor, 'localhost', 8080)
-
-        # create and start an automatically reconnecting client
-        service = ClientService(endpoint, transport)
-        service.startService()
-
-        # enter the event loop
-        reactor.run()
-    def onConnect(self):
-        self.log.info('transport connected')
-
-        # lets join a realm .. normally, we would also specify
-        # how we would like to authenticate here
-        self.join(self.config.realm)
-
-    def onChallenge(self, challenge):
-        self.log.info('authentication challenge received')
-
-    @inlineCallbacks
-    def onJoin(self, details):
-        pass
-
-    def onLeave(self, details):
-        self.log.info('session left: {}'.format(details))
-        self.disconnect()
-
-    def onDisconnect(self):
-        self.log.info('transport disconnected')
-        # this is to clean up stuff. it is not our business to
-        # possibly reconnect the underlying connection
-        self._countdown -= 1
-        if self._countdown <= 0:
-            try:
-                reactor.stop()
-            except ReactorNotRunning:
-                pass
-
-
-if __name__ == '__main__':
-    txaio.start_logging(level='info')
-
-    # create a WAMP session object. this is reused across multiple
-    # reconnects (if automatically reconnected)
-    session = MyAppSession(ComponentConfig(u'realm1', {}))
-
+    self.Exit()   
 

@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <future>
 #include <utility>
+//#include <experimental/any>
 namespace Core {
 
 class WorkOrderResult_t
@@ -27,7 +28,8 @@ public:
 private:
     ErrorCode_t m_Value; ///< Indicates success or failure
     std::string m_Info; ///< More info why the call succeeded or failed.
- 
+    //std::experimental::any m_Object; ///< Additional object storage
+
 };
 
 
