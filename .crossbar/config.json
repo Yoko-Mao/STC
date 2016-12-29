@@ -1,0 +1,152 @@
+{
+    "version": 2,
+    "controller": {},
+    "workers": [
+        {
+            "type": "router",
+            "realms": [
+                {
+                    "name": "realm1",
+                    "roles": [
+                        {
+                            "name": "anonymous",
+                            "permissions": [
+                                {
+                                    "uri": "",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": false,
+                                        "publisher": false
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "dev",
+                            "permissions": [
+                                {
+                                    "uri": "",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": false,
+                                        "publisher": false
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "database",
+                            "permissions": [
+                                {
+                                    "uri": "",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": false,
+                                        "publisher": false
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        }
+                     ]
+                }
+            ],
+            "transports": [
+               {
+                    "type": "web",
+                    "endpoint": {
+                        "type": "tcp",
+                        "port": 8080
+                    },
+                    "paths": {
+                        "authenticator": {
+                            "type": "websocket",
+                            "auth": {
+                                "ticket": {
+                                    "type": "static",
+                                    "principals": {
+                                        "authenticator": {
+                                            "ticket": "authenticator",
+                                            "role": "database"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "database": {
+                            "type": "websocket",
+                            "auth": {
+                                "ticket": {
+                                    "type": "static",
+                                    "principals": {
+                                        "database": {
+                                            "ticket": "database",
+                                            "role": "database"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "ws": {
+                            "type": "websocket",
+                            "auth": {
+                               "wampcra": {
+                                  "type": "dynamic",
+                                  "authenticator": "stc.lobby.users.authenticate"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "guest",
+            "executable": "node",
+            "arguments": [
+                "Authenticator.js",
+                "authenticator"
+            ],
+            "options": {
+                "workdir": "../services/",
+                "watch": {
+                    "directories": [
+                        "../services/"
+                    ],
+                    "action": "restart"
+                }
+            }
+        },
+        {
+            "type": "guest",
+            "executable": "node",
+            "arguments": [
+                "Database.js",
+                "database"
+            ],
+            "options": {
+                "workdir": "../services/"
+            }
+        }
+    ]
+}

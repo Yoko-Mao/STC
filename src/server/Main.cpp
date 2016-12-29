@@ -1,8 +1,8 @@
 /*! \file */
 #include <iostream>
 #include "common/core/utilities/CommandLine.h"
-#include "server/Lobby.h"
-#include "RPC.h"
+#include "server/Server.h"
+
 namespace po = boost::program_options;
 
 namespace
@@ -46,9 +46,6 @@ int main(int argc, char *argv[])
   {
     return 1;
   }
-  
-  WAMP_t WAMP;
-  WAMP.StartListeningOnInterface("127.0.0.1",8000);
-
+  ServerWAMP_t Server;
   return 0;
 }

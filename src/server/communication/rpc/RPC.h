@@ -1,15 +1,13 @@
 #ifndef RPC_H
 #define RPC_H
 #define BOOST_RESULT_OF_USE_DECLTYPE
-#include "Lobby.h"
-#include <grpc++/grpc++.h>
-#include <server.grpc.pb.h>
+
 #include <autobahn/autobahn.hpp>
 #include <boost/asio.hpp>
 #include <boost/version.hpp>
 #include <iostream>
 #include <set>
-
+#include <server/state/StateAbstract.h>
 /*! \brief Abstract representation of a server side RPC implementation
  *
  * This interface decouples the used RPC framework (e.g. google RPC) and the
@@ -34,7 +32,7 @@
 class RPC_i
 {
 public:
-  RPC_i();
+  RPC_i(State_i&);
   RPC_i& operator=(RPC_i const&) = delete;
   RPC_i& operator=(RPC_i&&) = delete;
   RPC_i(RPC_i const&) =delete;
@@ -42,22 +40,14 @@ public:
   
   virtual ~RPC_i() { }
   virtual Core::WorkOrderResult_t AddUser_Implementation(std::string const&  UserName); ///< Add new user to the lobby.
-  Core::WorkOrderResult_t GetUsers_Implementation(std::set<User_t>& Users); ///< Get users currently in lobby.
+  virtual Core::WorkOrderResult_t GetUsers_Implementation(std::set<User_t>& Users); ///< Get users currently in lobby.
+  virtual Core::WorkOrderResult_t RemoveUser_Implementation(std::string const& UserName); ///< Remove user from the lobby.
+  //virtual Core::WorkOrderResult_t AuthenticateUser_Implementation(std::string const& UserName, std::string const& Password);
+  //virtual Core::WorkOrderResult_t AuthorizeUser_Implementation(std::string const& UserName, std::string const& Path);
+  //virtual Core::WorkOrderResult_t SendText_Implementation(std::string const& FromUserName, std::string const& ToUserName, std::string const& Message); ///< Send text message between 2 user names
   virtual void StartListeningOnInterface(std::string&& LocalInterface, uint16_t Port) = 0;
 private:
-  Lobby_t m_Lobby;
-};
-
-/*! \brief Google RPC implementation of RPC_i
- *
- */
-class GRPC_t : public RPC_i, public comm::Server::Service
-{
-public:
-  GRPC_t();
-  virtual ~GRPC_t();
-  ::grpc::Status AddUser(::grpc::ServerContext*, const ::comm::User*, ::google::protobuf::Empty*) override;
-  virtual void StartListeningOnInterface(std::string&&, uint16_t) override;
+  State_i& m_State;
 };
 
 /*! \brief Web Application Messaging Protocol implementation of RPC_i
@@ -74,7 +64,7 @@ public:
 class WAMP_t : public RPC_i
 {
 public:
-  WAMP_t();
+  WAMP_t(State_i& Lobby);
   WAMP_t(WAMP_t&&) = delete;
   WAMP_t(WAMP_t const&) = delete;
   WAMP_t operator= (WAMP_t const&) = delete;
@@ -84,7 +74,8 @@ public:
   //RPC_i:
   virtual void StartListeningOnInterface(std::string&&, uint16_t) override;
   virtual Core::WorkOrderResult_t AddUser_Implementation(std::string const&  UserName) override; ///< Add new user to the lobby.
-    
+  virtual Core::WorkOrderResult_t RemoveUser_Implementation(std::string const&  UserName) override; ///< Add new user to the lobby.
+ 
   // WAMP specific only; publish to subscribers; Not supported by RPC
   // 
   // MAY ONLY BE CALLED FROM WAMP_t MEMBER FUNCTIONS.

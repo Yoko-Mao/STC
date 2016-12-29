@@ -1,27 +1,39 @@
 #include "RPC.h"
+#include "server/state/StateAbstract.h"
 #include <tuple>
+#include <vector>
+#include <map>
 #include <functional>
 
-GRPC_t::GRPC_t()
-{
-}
-
-GRPC_t::~GRPC_t()
-{
-}
-
-RPC_i::RPC_i() :
-m_Lobby()
+RPC_i::RPC_i(State_i& State) :
+m_State(State)
 {
 
 }
 
-WAMP_t::WAMP_t()
+WAMP_t::WAMP_t(State_i& State): 
+RPC_i(State)
 {
 }
 
 WAMP_t::~WAMP_t()
 {
+}
+
+/*! \brief Remove a user from the server.
+ * 
+ *  Schedules a work item that makes the lobby remove an existing user.
+ *  This is a blocking call that will return when the user was removed or the lobby
+ *  failed to remove the user. The user did not exist.
+ * 
+ *  \param UserName The name of the existing user that should be removed
+ * 
+ *  \return WorkOrderResult that indicates whether or not the work was successfull.
+ * 
+ */
+Core::WorkOrderResult_t RPC_i::RemoveUser_Implementation(std::string const& UserName)
+{
+  return m_State.RemoveUser(UserName);
 }
 
 /*! \brief Add a new user to the lobby.
@@ -37,9 +49,7 @@ WAMP_t::~WAMP_t()
  */
 Core::WorkOrderResult_t RPC_i::AddUser_Implementation(std::string const& UserName)
 {
-  auto Optional = m_Lobby.AddUser_Threadsafe(UserName);
-
-  return (Optional) ? Optional->get() : Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::ERROR);
+  return m_State.AddUser(UserName);
 }
 
 /*! \brief Add a new user to the lobby.
@@ -55,54 +65,9 @@ Core::WorkOrderResult_t RPC_i::AddUser_Implementation(std::string const& UserNam
  */
 Core::WorkOrderResult_t RPC_i::GetUsers_Implementation(std::set<User_t>& Users)
 {
-  auto Optional = m_Lobby.GetUsers_Threadsafe(Users);
-
-  return (Optional) ? Optional->get() : Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::ERROR);
+  return m_State.GetUsers(Users);
 }
 
-/*! \brief Google RPC wrapper for AddUserImpl.
- * 
- *  Decodes the received message using the GRPC framework and then calls 'AddUserImpl'.
- * 
- *  \param Context Not used
- *  \param User User to be added in protocol buffer format (see .proto file)
- *  \param Response Response to be sent back to client. Not applicable for this RPC.
- * 
- *  \return OK if user added, failure if user not added.
- * 
- */
-::grpc::Status GRPC_t::AddUser(::grpc::ServerContext *Context, const ::comm::User *User, ::google::protobuf::Empty *Response)
-{
-  //Core::WorkOrderResult_t Result = AddUserImpl(UserName);
-  return ::grpc::Status(grpc::StatusCode::ALREADY_EXISTS, "POGO STICK");
-}
-
-/*! \brief Start the google RPC server on both interfaces.
- * 
- *  The RPC server will listen on the combination Ip+Port. If multiple NICs/IPs
- *  are available the Ip param may be relevant but if hosting the server on lo
- *  this should be 0.0.0.0.
- * 
- *  \param Ip Ip onto which to listen for incoming RPC's; This will probably be 0.0.0.0 if localhost.
- *  \param Port Port onto which to listen for incoming RPC's.
- * 
- * 
- */
-void GRPC_t::StartListeningOnInterface(std::string&& Ip, uint16_t Port)
-{
-  // Listen on the given address without any authentication mechanism.
-  auto ServerBuilder = ::grpc::ServerBuilder();
-  ServerBuilder.AddListeningPort(Ip + ":" + std::to_string(Port), grpc::InsecureServerCredentials());
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
-  ServerBuilder.RegisterService(this);
-  // Finally assemble the server.
-  auto server = std::unique_ptr<::grpc::Server>(ServerBuilder.BuildAndStart());
-
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
-  server->Wait();
-}
 namespace
 {
 template <typename T>
@@ -161,6 +126,7 @@ decltype(auto) CallFunctionWithTuple(RPC_i& Obj, F f, std::tuple<InputTupleTypes
 }
 
 /*! \brief Extract parameters from Autobahn interface and call required implementation function.
+ *  This is for incomming RPCs only.
  * 
  *  The point of this function is to easily implement new WAMP RPCs.
  *  ParseAndExecuteWAMP_RPC should be called from the entry point of the RPC.
@@ -259,6 +225,7 @@ void RegisterRPC(std::string const& Name, Core::WorkOrderResult_t(RPC_i::*Functi
 
 }
 
+
 /*! \brief Connect to the WAMP server
  * 
  *  Connect to the WAMP router and register all RPCs that clients may call.
@@ -289,6 +256,7 @@ void WAMP_t::StartListeningOnInterface(std::string&& Ip, uint16_t Port)
     boost::future<void> connect_future;
     boost::future<void> start_future;
     boost::future<void> join_future;
+
 
     connect_future = transport->connect().then([&](boost::future<void> connected)
     {
@@ -329,9 +297,33 @@ void WAMP_t::StartListeningOnInterface(std::string&& Ip, uint16_t Port)
             return;
           }
           RegisterRPC("STC.Lobby.Users.Add", &RPC_i::AddUser_Implementation, *this);
+          RegisterRPC("STC.Lobby.Users.Remove", &RPC_i::RemoveUser_Implementation, *this);
           RegisterRPC("STC.Lobby.Users.Get", &RPC_i::GetUsers_Implementation, *this);
+          
+          boost::future<void> future = m_Session->provide("stc.lobby.users.authenticate", [&](autobahn::wamp_invocation Invocation)
+          {
+            std::cerr << "Authenticate"<<std::endl;
+            
+            std::map<std::string, std::string> Map;
+            Map.insert(std::pair<std::string, std::string>("secret", "dev"));
+            Map.insert(std::pair<std::string, std::string>("role", "dev"));
+            Invocation->result(Map);
+            //Invocation->result()
+            //Invocation->
+          }).then(
+            [&](boost::future<autobahn::wamp_registration> registration)
+            {
+              try
+              {
+                registration.get();
+              } catch (const std::exception& e)
+              {
+                std::cerr << e.what() << std::endl;
+                m_IO.stop();
+                return;
+              }
+            });
 
-          std::cout << "RPCs registered" <<std::endl;
         });
       });
     });
@@ -346,10 +338,6 @@ void WAMP_t::StartListeningOnInterface(std::string&& Ip, uint16_t Port)
 }
 
 /*! \brief Publish user list update to subscribers
- * 
- *  Connect to the WAMP router and register all RPCs that clients may call.
- *  Connection to the WAMP router should be active; no checks are performed.
- *  Session should be dereferencable.
  * 
  *  \param Added Did the user leave or join the lobby?
  *  \param user User that joined or left the lobby.
@@ -376,6 +364,28 @@ Core::WorkOrderResult_t WAMP_t::AddUser_Implementation(std::string const& UserNa
   if (Result.IsSuccessfull())
   {
     PublishUser(true, UserName);
+  }
+  
+  return Result;
+  
+}
+
+/*! \brief Remove existing user from the lobby.
+ * 
+ *  Calls base implementation and if user was removed the user removal is published.
+ * 
+ *  \param UserName The name of the user that should be removed.
+ * 
+ *  \return WorkOrderResult that indicates whether or not the work was successfull.
+ * 
+ */
+Core::WorkOrderResult_t WAMP_t::RemoveUser_Implementation(std::string const& UserName)
+{
+  Core::WorkOrderResult_t Result = RPC_i::RemoveUser_Implementation(UserName);
+  
+  if (Result.IsSuccessfull())
+  {
+    PublishUser(false, UserName);
   }
   
   return Result;
