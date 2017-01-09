@@ -41,6 +41,8 @@ public:
   CommunicationWAMP_t(CommunicationWAMP_t&&) = delete;  
   virtual ~CommunicationWAMP_t() { }
   
+  boost::optional<User_t> ReadUser(std::string const& UserName){ return m_DatabaseWAMP.Read(UserName);}
+
 private:
   WAMP_t m_RPC_WAMP;
   DatabaseWAMP_t m_DatabaseWAMP;

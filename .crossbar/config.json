@@ -41,8 +41,8 @@
                                         "subscribe": true
                                     },
                                     "disclose": {
-                                        "caller": false,
-                                        "publisher": false
+                                        "caller": true,
+                                        "publisher": true
                                     },
                                     "cache": true
                                 }
@@ -111,10 +111,15 @@
                             "type": "websocket",
                             "auth": {
                                "wampcra": {
-                                  "type": "dynamic",
-                                  "authenticator": "stc.lobby.users.authenticate"
-                                }
-                            }
+                                  "type": "static",
+                                  "users": {
+                                     "dev": {
+                                        "secret": "dev",
+                                        "role": "dev"
+                                     }
+                                 }
+                              }
+                           }
                         }
                     }
                 }

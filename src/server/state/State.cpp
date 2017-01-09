@@ -2,7 +2,7 @@
 
 State_t::State_t(Communication_i& CommunicationForState):
   m_Queue(),
-  m_CommunicationForState(CommunicationForState),
+  m_Communication(CommunicationForState),
   m_Users()
 {
 
@@ -63,34 +63,29 @@ Core::WorkOrderResult_t State_t::GetUsers(std::set<User_t>&  Users)
   return m_Queue.ScheduleWork([&]{ return GetUsers_Implementation(Users);});
 }
 
-/*! \brief Implementation to add new user to Lobby.
- *
- * Not threadsafe; Should not be called from outside the lobby.
+/*! \brief Implementation to add new user to the active state.
+ * Only users present in the database can be added to the active state.
+ * Not threadsafe; Should not be called from outside work order execution.
  * 
+ * \param UserName ID of new user to add;
  * 
- * \param UserName ID of new user to add; Expected to be unique.
+ * \return Work order result with ErrorCode_t::NOT_FOUND if user does not exist.
  * 
- * 
- * \return Future that will be completed once the work item is handled.
  */
 Core::WorkOrderResult_t State_t::AddUser_Implementation(std::string const& UserName)
 {
-  User_t User(UserName);
-  auto Pair = m_Users.insert(User);
-  if (!Pair.second)
+  auto OptionalUser = m_Communication.ReadUser(UserName);
+  
+  if (OptionalUser)
   {
-    return Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::DUPLICATE, "User already exists in Lobby.");
+     m_Users.insert(OptionalUser.get());
+     return Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::SUCCESS);
   }
-  else
-  {
-    //m_Database.Insert(User);
-    return Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::SUCCESS);
-  }
-
+  
+  return Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::DUPLICATE, "Unknown username provided");
 }
 
 /*! \brief Implementation to remove an existing user from the lobby.
- *
  * Not threadsafe; Should not be called from outside the lobby.
  * 
  * \param UserName ID of user to remove.
@@ -102,7 +97,7 @@ Core::WorkOrderResult_t State_t::RemoveUser_Implementation(std::string const& Us
   auto WasRemoved = m_Users.erase(User_t(UserName));
   if (!WasRemoved)
   {
-    //m_Database.Delete(UserName);
+
     return Core::WorkOrderResult_t(Core::WorkOrderResult_t::ErrorCode_t::NOT_FOUND, "Can not remove non existing user.");
   }
   else

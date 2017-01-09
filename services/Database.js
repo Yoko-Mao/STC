@@ -49,7 +49,8 @@ var Connection = new Autobahn.Connection({
 Connection.onopen = function (Session) 
 {
   CurrentSession = Session; 
-  RegisterRPC("stc.database.users.insert",UserTable.Insert);
+  RegisterRPC("stc.database.users.create",UserTable.Create);
+  RegisterRPC("stc.database.users.read",UserTable.Read);
 };
 
 Connection.open();

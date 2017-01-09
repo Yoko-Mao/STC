@@ -20,7 +20,7 @@ public:
   DatabaseWAMP_t(DatabaseWAMP_t&&) = delete;  
   virtual ~DatabaseWAMP_t() { }
   
-  virtual boost::optional<User_t> Read(std::string const& UserName) { return User_t("test");}
+  virtual boost::optional<User_t> Read(std::string const& UserName) override;
   virtual bool Insert(User_t const&);
   virtual void Update(User_t const&) {}
   virtual void Delete(std::string const& UserName) {}

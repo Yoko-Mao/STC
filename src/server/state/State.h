@@ -35,7 +35,7 @@ private:
   Core::WorkOrderResult_t RemoveUser_Implementation(std::string const&);
   Core::WorkOrderResult_t GetUsers_Implementation(std::set<User_t>& );
   Core::WorkOrderQueueThread_t m_Queue; ///< Lobby thread; work for server is scheduled on this thread.
-  Communication_i& m_CommunicationForState; ///< Ref to some object handling database access.
+  Communication_i& m_Communication; ///< Ref to some object handling database access.
   std::set<User_t> m_Users; ///< Users in lobby.
 };
 

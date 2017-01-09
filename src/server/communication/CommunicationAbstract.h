@@ -1,4 +1,6 @@
 #pragma once
+#include "common/core/task/WorkOrder.h"
+#include "server/state/User.h"
 
 /*! \brief This interface describes all functionalities a communication
  *  proxy object should support. 
@@ -14,5 +16,7 @@
 class Communication_i
 {
 public:
+  virtual boost::optional<User_t> ReadUser(std::string const& UserName) = 0; //Retrieve User from database.
+
   //Add stuff here that should be called from state.
 };
